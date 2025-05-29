@@ -1,0 +1,345 @@
+.data
+# Add money intro
+intro_msg_add: .asciiz "You selected the add money option.\n"
+intro_msg_remove: .asciiz "You selected the remove money option.\n"
+#choose acc
+add_to_which:.asciiz "which account would you like to add money to? 'c' for
+checking and 's' for savings: "
+remove_from_which:.asciiz "which account would you like to remove money from? 'c'
+for checking and 's' for savings: "
+#how much
+how_much_add: .asciiz "how much would you like to add? "
+how_much_remove: .asciiz "how much would you like to remove? "
+#amount added
+money_added: .asciiz "money added successfully\n"
+money_removed: .asciiz "money removed succesfully\n"
+#checking and saving balance
+checking_balance: .asciiz "your checking balance is: "
+saving_balance: .asciiz "your saving balance is "
+updated_balance_msg: .asciiz "balance updated\n"
+#transfer option
+transfer_option: .asciiz "you chose the option transfer.\n"
+#transfer_which
+transfer_msg: .asciiz "which account would you like to transfer money from 'c' for
+checking or 's' for savings? "
+#transfer how much
+transfer_much: .asciiz "how much would you like to transfer? "
+#transfer done
+transfer_done: .asciiz "transfer done.\n"
+#not enough funds
+not_enough_funds: .asciiz "not enough funds.\n"
+.text
+.globl Add_Money
+Add_Money:
+la $a0, intro_msg_add
+li $v0, 4
+syscall
+addi $sp, $sp, -4 # space for fr
+sw $ra, 0($sp) # Save the return address
+jal account_accessed #login function
+lw $ra, 0($sp) # Load the return address back into $ra
+addi $sp, $sp, 4 # free space
+choosing_account:
+#choosing where to add money
+la $a0, add_to_which
+li $v0, 4
+syscall
+# Get user response
+li $v0, 12 # Syscall for single character input
+syscall
+move $t0, $v0 # Save the response
+la $a0, newline
+li $v0, 4
+syscall
+addi $sp, $sp, -4 # space for ra
+sw $ra, 0($sp) # Save the return address
+jal account_Type_Check #input check function
+lw $ra, 0($sp) # Load the return address back into $ra
+addi $sp, $sp, 4 # free space
+beq $t3, 1, choosing_account #if input was invalid retry
+beq $t0, $t1, checking_account # If user input is 'c', jump to checking acc
+beq $t0, $t2, savings_account # If user input is 's', jump to savings acc
+checking_account:
+la $a0, computer_response_checking #shows user which account theyre in
+li $v0, 4
+syscall
+la $a0, how_much_add #ask the user how much to add
+li $v0, 4
+syscall
+#user adding the amount
+li $v0, 5
+syscall
+la $t0, checking_accounts # Base address of the checking
+accounts array
+move $t1, $s1 # Copy user index to $t1 to to
+find account position
+li $t2, 4 # Each number takes 4 bytes
+mul $t1, $t1, $t2 # Multiply index by 4
+add $t0, $t0, $t1 # Skip accounts by calculated
+offset
+lw $t3, 0($t0) #load current balance
+add $t3, $t3, $v0 # add balance
+#Store the updated balance back into the checking account
+sw $t3, 0($t0) # Store the new balance back in
+the checking account slot
+la $a0, updated_balance_msg #message for updated balance
+li $v0, 4
+syscall
+jr $ra
+savings_account:
+la $a0, computer_response_savings #shows user which account theyre in
+li $v0, 4
+syscall
+la $a0, how_much_add #ask the user how much to add
+li $v0, 4
+syscall
+#user adding the amount
+li $v0, 5
+syscall
+la $t0, savings_accounts # Base address of the savings
+accounts array
+move $t1, $s1 # Copy user index to $t1 to to
+find account position
+li $t2, 4 # Each number takes 4 bytes
+mul $t1, $t1, $t2 # Multiply index by 4
+add $t0, $t0, $t1 # Skip accounts by calculated
+offset
+lw $t3, 0($t0) #load current balance
+add $t3, $t3, $v0 # add balance
+#Store the updated balance back into the savings account
+sw $t3, 0($t0) # Store the new balance back in
+the checking account slot
+la $a0, updated_balance_msg #message for updated balance
+li $v0, 4
+syscall
+jr $ra
+.globl Remove_Money
+Remove_Money:
+la $a0, intro_msg_remove
+li $v0, 4
+syscall
+addi $sp, $sp, -4 # space for fr
+sw $ra, 0($sp) # Save the return address
+jal account_accessed #login function
+lw $ra, 0($sp) # Load the return address back into $ra
+addi $sp, $sp, 4 # free space
+choosing_account_remove:
+#choosing where to add money
+la $a0, remove_from_which
+li $v0, 4
+syscall
+# Get user response
+li $v0, 12 # Syscall for single character input
+syscall
+move $t0, $v0 # Save the response
+la $a0, newline
+li $v0, 4
+syscall
+addi $sp, $sp, -4 # space for ra
+sw $ra, 0($sp) # Save the return address
+jal account_Type_Check #input check function
+lw $ra, 0($sp) # Load the return address back into $ra
+addi $sp, $sp, 4 # free space
+beq $t3, 1, choosing_account_remove #if input was invalid retry
+beq $t0, $t1, checking_account_remove # If user input is 'c', jump to checking
+acc
+beq $t0, $t2, savings_account_remove # If user input is 's', jump to
+savings acc
+checking_account_remove:
+la $a0, computer_response_checking #shows user which account theyre in
+li $v0, 4
+syscall
+remove_how_much_checking:
+la $a0, how_much_remove #ask the user how much to remove
+li $v0, 4
+syscall
+#user adding the amount
+li $v0, 5
+syscall
+la $t0, checking_accounts # Base address of the checking
+accounts array
+move $t1, $s1 # Copy user index to $t1 to to
+find account position
+li $t2, 4 # Each number takes 4 bytes
+mul $t1, $t1, $t2 # Multiply index by 4
+add $t0, $t0, $t1 # Skip accounts by calculated
+offset
+lw $t3, 0($t0) #load current balance
+blt $t3, $v0, not_enough_basic_checking
+sub $t3, $t3, $v0 # remove balance
+#Store the updated balance back into the checking account
+sw $t3, 0($t0) # Store the new balance back in
+the checking account slot
+# Print the updated balance (optional, for debugging purposes)
+la $a0, updated_balance_msg #message for updated balance
+li $v0, 4
+syscall
+jr $ra
+savings_account_remove:
+la $a0, computer_response_savings #shows user which account theyre in
+li $v0, 4
+syscall
+remove_how_much_savings:
+la $a0, how_much_remove #ask the user how much to remove
+li $v0, 4
+syscall
+#user removing the amount
+li $v0, 5
+syscall
+la $t0, savings_accounts # Base address of the savings
+accounts array
+move $t1, $s1 # Copy user index to $t1 to to
+find account position
+li $t2, 4 # Each number takes 4 bytes
+mul $t1, $t1, $t2 # Multiply index by 4
+add $t0, $t0, $t1 # Skip accounts by calculated
+offset
+lw $t3, 0($t0) #load current balance
+blt $t3, $v0, not_enough_basic_savings
+sub $t3, $t3, $v0 # remove balance
+#Store the updated balance back into the savings account
+sw $t3, 0($t0) # Store the new balance back in
+the checking account slot
+la $a0, updated_balance_msg #message for updated balance
+li $v0, 4
+syscall
+jr $ra
+not_enough_basic_savings:
+la $a0, not_enough_funds
+li $v0, 4
+syscall
+b remove_how_much_savings
+not_enough_basic_checking:
+la $a0, not_enough_funds
+li $v0, 4
+syscall
+b remove_how_much_checking
+.globl Transfer_Money
+Transfer_Money:
+la $a0, transfer_option
+li $v0, 4
+syscall
+#first user logs in
+addi $sp, $sp, -4 # space for fr
+sw $ra, 0($sp) # Save the return address
+jal account_accessed #login function
+lw $ra, 0($sp) # Load the return address back into $ra
+addi $sp, $sp, 4 # free space
+transfer_from_where:
+#ask which acc to transfer from
+la $a0, transfer_msg
+li $v0, 4
+syscall
+# Get user response
+li $v0, 12 # Syscall for single character input
+syscall
+move $t0, $v0 # Save the response
+la $a0, newline
+li $v0, 4
+syscall
+addi $sp, $sp, -4 # space for ra
+sw $ra, 0($sp) # Save the return address
+jal account_Type_Check #input check function
+lw $ra, 0($sp) # Load the return address back into $ra
+addi $sp, $sp, 4 # free space
+beq $t3, 1, transfer_from_where #if input was invalid retry
+beq $t0, $t1, from_checking # If user input is 'c', jump to from checking
+beq $t0, $t2, from_savings # If user input is 's', jump to from savings
+from_checking:
+la $a0, computer_response_checking
+li $v0, 4
+syscall
+transfer_how_much_checking:
+la $a0, transfer_much
+li $v0, 4
+syscall
+#user transfer amount
+li $v0, 5
+syscall
+#first remove the amount
+la $t0, checking_accounts # Base address of the savings
+accounts array
+move $t1, $s1 # Copy user index to $t1 to to
+find account position
+li $t2, 4 # Each number takes 4 bytes
+mul $t1, $t1, $t2 # Multiply index by 4
+add $t0, $t0, $t1 # Skip accounts by calculated
+offset
+lw $t3, 0($t0) #load current balance
+blt $t3, $v0, not_enough_transfer_checking
+sub $t3, $t3, $v0 # remove balance
+#Store the updated balance back into the savings account
+sw $t3, 0($t0) # Store the new balance back in
+the checking account slot
+#add it to the other account
+la $t0, savings_accounts # Base address of the savings
+accounts array
+move $t1, $s1 # Copy user index to $t1 to to
+find account position
+li $t2, 4 # Each number takes 4 bytes
+mul $t1, $t1, $t2 # Multiply index by 4
+add $t0, $t0, $t1 # Skip accounts by calculated
+offset
+lw $t3, 0($t0) #load current balance
+add $t3, $t3, $v0 # add balance
+#Store the updated balance back into the savings account
+sw $t3, 0($t0) # Store the new balance back in
+the checking account slot
+la $a0, transfer_done #transfer done
+li $v0, 4
+syscall
+jr $ra
+from_savings:
+la $a0, computer_response_savings
+li $v0, 4
+syscall
+transfer_how_much_savings:
+la $a0, transfer_much
+li $v0, 4
+syscall
+#user transfer amount
+li $v0, 5
+syscall
+#first remove the amount
+la $t0, savings_accounts # Base address of the savings
+accounts array
+move $t1, $s1 # Copy user index to $t1 to to
+find account position
+li $t2, 4 # Each number takes 4 bytes
+mul $t1, $t1, $t2 # Multiply index by 4
+add $t0, $t0, $t1 # Skip accounts by calculated
+offset
+lw $t3, 0($t0) #load current balance
+blt $t3, $v0, not_enough_transfer_savings
+sub $t3, $t3, $v0 # remove balance
+#Store the updated balance back into the savings account
+sw $t3, 0($t0) # Store the new balance back in
+the checking account slot
+#add it to the other account
+la $t0, checking_accounts # Base address of the savings
+accounts array
+move $t1, $s1 # Copy user index to $t1 to to
+find account position
+li $t2, 4 # Each number takes 4 bytes
+mul $t1, $t1, $t2 # Multiply index by 4
+add $t0, $t0, $t1 # Skip accounts by calculated
+offset
+lw $t3, 0($t0) #load current balance
+add $t3, $t3, $v0 # add balance
+#Store the updated balance back into the savings account
+sw $t3, 0($t0) # Store the new balance back in
+the checking account slot
+la $a0, transfer_done #transfer done
+li $v0, 4
+syscall
+jr $ra
+not_enough_transfer_savings:
+la $a0, not_enough_funds
+li $v0, 4
+syscall
+b transfer_how_much_savings
+not_enough_transfer_checking:
+la $a0, not_enough_funds
+li $v0, 4
+syscall
+b transfer_how_much_checking

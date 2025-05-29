@@ -1,0 +1,105 @@
+
+intro_msg_view:.asciiz "you selected the view account info option.\n"
+.text
+.globl View_Account_Info
+View_Account_Info:
+la $a0, intro_msg_view
+li $v0, 4
+#first user logs in
+addi $sp, $sp, -4 # space for fr
+sw $ra, 0($sp) # Save the return address
+jal account_accessed #login function
+lw $ra, 0($sp) # Load the return address back into $ra
+addi $sp, $sp, 4 # free space
+la $a0, username
+li $v0, 4
+syscall
+la $t0, usernames # Base address of usernames array
+move $t1, $s1 # Copy user index to $t1 to to find
+account position
+li $t2, 4 # Each name takes 9 bytes
+mul $t1, $t1, $t2 # Multiply index by 4
+add $t0, $t0, $t1 # Skip accounts by calculated offset
+#print the name
+move $a0, $t0
+li $v0, 4
+syscall
+la $a0, newline
+li $v0, 4
+syscall
+#pring checking balance
+la $a0, checking_balance_msg
+li $v0, 4
+syscall
+la $t0, checking_accounts # Base address of the savings
+accounts array
+move $t1, $s1 # Copy user index to $t1 to to find
+account position.data
+username: .asciiz "username: "
+checking_balance_msg: .asciiz "checking balance: $"
+savings_balance_msg: .asciiz "savings balance: $"
+intro_msg_view:.asciiz "you selected the view account info option.\n"
+.text
+.globl View_Account_Info
+View_Account_Info:
+la $a0, intro_msg_view
+li $v0, 4
+#first user logs in
+addi $sp, $sp, -4 # space for fr
+sw $ra, 0($sp) # Save the return address
+jal account_accessed #login function
+lw $ra, 0($sp) # Load the return address back into $ra
+addi $sp, $sp, 4 # free space
+la $a0, username
+li $v0, 4
+syscall
+la $t0, usernames # Base address of usernames array
+move $t1, $s1 # Copy user index to $t1 to to find
+account position
+li $t2, 4 # Each name takes 9 bytes
+mul $t1, $t1, $t2 # Multiply index by 4
+add $t0, $t0, $t1 # Skip accounts by calculated offset
+#print the name
+move $a0, $t0
+li $v0, 4
+syscall
+la $a0, newline
+li $v0, 4
+syscall
+#pring checking balance
+la $a0, checking_balance_msg
+li $v0, 4
+syscall
+la $t0, checking_accounts # Base address of the savings
+accounts array
+move $t1, $s1 # Copy user index to $t1 to to find
+account position
+li $t2, 4 # Each number takes 4 bytes
+mul $t1, $t1, $t2 # Multiply index by 4
+add $t0, $t0, $t1 # Skip accounts by calculated offset
+lw $t3, 0($t0) #load current balance
+move $a0 $t3
+li $v0, 1
+syscall
+la $a0, newline
+li $v0, 4
+syscall
+#pring savings balance
+la $a0, savings_balance_msg
+li $v0, 4
+syscall
+la $t0, savings_accounts # Base address of the savings
+accounts array
+move $t1, $s1 # Copy user index to $t1 to to find
+account position
+li $t2, 4 # Each number takes 4 bytes
+mul $t1, $t1, $t2 # Multiply index by 4
+add $t0, $t0, $t1 # Skip accounts by calculated offset
+lw $t3, 0($t0) #load current balance
+move $a0 $t3
+li $v0, 1
+syscall
+la $a0, newline
+li $v0, 4
+syscall
+jr $ra

@@ -1,0 +1,214 @@
+.data
+.globl debug
+debug: .asciiz "debug\n"
+#new line character
+.globl newline
+newline: .asciiz "\n"
+#intro and goodbye msg
+welcome: .asciiz "Welcome to Rade.\n"
+goodbye: .asciiz "Thanks for visiting, see you next time!"
+#bank menu codes
+#1 = add account, 2 = remove account, 3 = view account, 4 = update acc info,
+#5 = deposit money, 6 = withdraw money, 7 = transfer money, 0 = exit
+bank_menu_codes: .word 1, 2, 3, 4, 5, 0
+#menu input message
+menu: .asciiz "You are now in the menu. \n"
+#menu code message and question for input
+code_message: .asciiz "the code options are:\n"
+#invalid input message
+invalid_message: "You entered an invalid code. Try again.\n"
+#options
+option1: .asciiz "1 - Add Account\n"
+option2: .asciiz "2 - View Account Info\n"
+option3: .asciiz "3 - Deposit Money\n"
+option4: .asciiz "4 - Withdraw Money\n"
+option5: .asciiz "5 - Transfer Money\n"
+option0: .asciiz "0 - Exit\n"
+#back to menu msg
+back_in_menu: .asciiz "You are now back in the main menu.\n"
+#ask user what they want to do
+code_options_ask: .asciiz "What would you like to do? "
+#bank details arrays 5 users #eliza456 #8 bytes for each
+.globl usernames
+usernames: .space 45
+.globl passwords
+passwords: .space 45 #banana56/ #8 bytes for each
+.globl checking_accounts
+.align 2
+checking_accounts: .word 20 # 4 bytes eaach for bal
+.globl savings_accounts
+.align 2
+savings_accounts: .word 20
+#more prompts/data, but global ones
+.globl enter_username
+.align 2
+enter_username: .asciiz "Enter username of 8 characters: "
+.globl enter_password
+enter_password: .asciiz "Enter password of 8 characters: "
+.globl invalid_username
+invalid_username: .asciiz "Invalid username try again.\n"
+.globl invalid_password
+invalid_password: .asciiz "Invalid password try again.\n"
+.globl choose_account
+choose_account: .asciiz "Choose an account type:'c' for checking and 's' for
+savings"
+.globl enter_balance
+enter_balance: .asciiz "Enter balance for the account: "
+.globl account_added
+account_added: .asciiz "Account successfully added!\n"
+.globl account_limit
+account_limit: .asciiz "Account limit reached!\n"
+.text
+Main:
+li $t7, 0 #initial user count
+#welcome message loop
+la $a0, welcome
+li $v0, 4
+syscall
+# In Menu
+la $a0, menu
+li $v0, 4
+syscall
+#tell the user the bank options
+la $a0, code_message
+li $v0, 4
+syscall
+#show options codes
+la $a0, option1
+li $v0, 4
+syscall
+la $a0, option2
+li $v0, 4
+syscall
+la $a0, option3
+li $v0, 4
+syscall
+la $a0, option4
+li $v0, 4
+syscall
+la $a0, option5
+li $v0, 4
+syscall
+la $a0, option0
+li $v0, 4
+syscall
+Menu_Loop:
+#load bank menu codes in t1
+la $t1, bank_menu_codes
+#ask user what they would like to do
+la $a0, code_options_ask
+li $v0, 4
+syscall
+# user input in $t0
+li $v0, 5
+syscall
+move $t0, $v0
+#input value check, check if value is between 0
+li $t2, 0 #lower bound
+li $t3, 5 #upper bound
+blt $t0, $t2, invalid_input # If input < 0, jump to invalid_input
+bgt $t0, $t3, invalid_input # If input > 5, jump to invalid_input
+#b Menu_Choices # Branch to Menu_Choices if bounds are
+valid
+Menu_Choices:
+#while input is not equal to "Exit code" , explore other choices, otherwise exit
+bank
+lw $t2, 0($t1)
+beq $t0, $t2, add_Account
+lw $t2, 4($t1)
+beq $t0, $t2, view_Account_Info
+lw $t2, 8($t1)
+beq $t0, $t2, add_Money
+lw $t2, 12($t1)
+beq $t0, $t2, remove_Money
+lw $t2, 16($t1)
+beq $t0, $t2, transfer_Money
+lw $t2, 20($t1)
+beq $t0, $t2, Exit
+b Menu_Loop #branch back to menu
+Exit:
+#good bye and terminate
+la $a0, goodbye
+li $v0, 4
+syscall
+li $v0, 10
+syscallla $t1, bank_menu_codes
+#ask user what they would like to do
+la $a0, code_options_ask
+li $v0, 4
+syscall
+# user input in $t0
+li $v0, 5
+syscall
+move $t0, $v0
+#input value check, check if value is between 0
+li $t2, 0 #lower bound
+li $t3, 5 #upper bound
+blt $t0, $t2, invalid_input # If input < 0, jump to invalid_input
+bgt $t0, $t3, invalid_input # If input > 5, jump to invalid_input
+#b Menu_Choices # Branch to Menu_Choices if bounds are
+valid
+Menu_Choices:
+#while input is not equal to "Exit code" , explore other choices, otherwise exit
+bank
+lw $t2, 0($t1)
+beq $t0, $t2, add_Account
+lw $t2, 4($t1)
+beq $t0, $t2, view_Account_Info
+lw $t2, 8($t1)
+beq $t0, $t2, add_Money
+lw $t2, 12($t1)
+beq $t0, $t2, remove_Money
+lw $t2, 16($t1)
+beq $t0, $t2, transfer_Money
+lw $t2, 20($t1)
+beq $t0, $t2, Exit
+b Menu_Loop #branch back to menu
+Exit:
+#good bye and terminate
+la $a0, goodbye
+li $v0, 4
+syscall
+li $v0, 10
+syscall
+#invalid input check for menu codes
+invalid_input:
+la $a0, invalid_message
+li $v0, 4
+syscall
+b Menu_Loop
+#add account function call
+add_Account:
+jal Add_Account #go to add account function
+la $a0, back_in_menu #back to menu annoucement
+li $v0, 4
+syscall
+b Menu_Loop #branch back to menu
+#add money function call
+add_Money:
+jal Add_Money #go to add account function
+la $a0, back_in_menu #back to menu annoucement
+li $v0, 4
+syscall
+b Menu_Loop #branch back to menu
+#remove money function call
+remove_Money:
+jal Remove_Money #go to add account function
+la $a0, back_in_menu #back to menu annoucement
+li $v0, 4
+syscall
+b Menu_Loop #branch back to menu
+#transfrer money function call
+transfer_Money:
+jal Transfer_Money #go to add account function
+la $a0, back_in_menu #back to menu annoucement
+li $v0, 4
+syscall
+b Menu_Loop #branch back to menu
+#view acc info function call
+view_Account_Info:
+jal View_Account_Info #go to add account function
+la $a0, back_in_menu #back to menu annoucement
+li $v0, 4
+syscall
+b Menu_Loop #branch back to menu

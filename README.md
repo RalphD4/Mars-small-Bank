@@ -1,5 +1,6 @@
 # Mars-small-Bank
 The project demonstrates a short bank that stores 5 users with their passwords.
+
 The users’s usernames, passwords, checking balances, and saving balances
 are each stored on their respective arrays, and all share a common index based on
 where they are positioned in the array. First, the user will be given a choice to

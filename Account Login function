@@ -1,0 +1,176 @@
+.data
+invalid_input_msg: .asciiz "Invalid input. Please enter 'c' for checking or 's' for
+savings.\n"
+enter_username: .asciiz "enter your username to login: "
+enter_password: .asciiz "enter your password: "
+.globl wrong_username
+wrong_username: .asciiz "invalid username\n"
+wrong_password: .asciiz "invalid password\n"
+logged_in: .asciiz "you are logged in\n "
+.text
+.globl account_Type_Check
+account_Type_Check:
+# Validate input (check if it's 'c' or 's')
+li $t1, 99 # ASCII for 'c'
+li $t2, 115 # ASCII for 's'
+beq $t0, $t1, done_checking # If user input is 'c', jump to done
+beq $t0, $t2, done_checking # If user input is 's', jump to done
+la $a0, newline
+li $v0, 4
+syscall
+# Invalid input, print error message and re-prompt
+la $a0, invalid_input_msg
+li $v0, 4
+syscall
+li $t3, 1 #odd return value
+jr $ra
+#valid input
+done_checking:
+li $t3, 0
+jr $ra
+.globl account_accessed
+#user logs in with username and their password
+account_accessed:
+la $a0, enter_username
+li $v0, 4
+syscall
+# Read username
+li $v0, 8 # Syscall to read a string
+la $a0, buffer # Buffer for input
+#buffer
+li $a1, 9 # Max 8 chars + null terminator
+syscall
+# Print newline
+la $a0, newline
+li $v0, 4
+syscall
+# Validate username length
+la $t0, buffer # Address of input username
+#buffer
+li $t1, 0 # Character count
+validate_length:
+lb $t2, 0($t0) # Load current byte
+beqz $t2, check_length_done # Null terminator found
+addi $t1, $t1, 1 # Increment count
+addi $t0, $t0, 1 # Move to next byte
+b validate_length
+check_length_done:
+li $t3, 8 # Expected length
+bne $t1, $t3, invalid_length # If length != 8, reprompt
+addi $sp, $sp, -4 # space for ra
+sw $ra, 0($sp) # Save the return address
+jal username_exist #input check function
+lw $ra, 0($sp) # Load the return address back into $ra
+addi $sp, $sp, 4 # free space
+# Check if username exists in the database
+la $t0, usernames # Load the base address of usernames array
+li $t4, 0 # Initialize user index
+li $t9, 0 # Temporary counter for characters during
+comparison
+check_usernames:
+bge $t4, $t7, invalid_user # If index >= number of usernames, not found
+# Compare current username slot with entered username
+la $t6, buffer # Address of entered username
+li $t8, 1 # Assume match (true)
+compare_usernames:
+lb $a1, 0($t0) # Load byte from current username slot
+lb $a2, 0($t6) # Load byte from entered username
+bne $a1, $a2, not_match # If bytes differ, no match
+beqz $a1, username_found # If null terminator, match found
+add $t0, $t0, 1 # Move to next byte in username slot
+add $t6, $t6, 1 # Move to next byte in entered username
+b compare_usernames
+not_match:
+li $t8, 0 # Set match to false
+check_next_user:
+# Skip null terminator for current username and move to next slot
+lb $a1, 0($t0) # Load current byte
+beqz $a1, skip_null # If null, skip this byte
+add $t0, $t0, 1 # Otherwise, move to the next byte
+b check_next_user
+skip_null:
+addi $t0, $t0, 1 # Move to next user slot (start of next
+username)
+addi $t4, $t4, 1 # Increment user index
+b check_usernames # Continue checking
+username_found:
+move $s1, $t4 # Save user index in $s1 for passwords position
+li $s2, 0
+##here we check the password
+checking_password:
+# Prompt for password input
+la $a0, enter_password
+li $v0, 4
+syscall
+# Read password (up to 8 characters)
+li $v0, 8 # Syscall to read a string
+la $a0, buffer # Buffer for input
+bufffer
+li $a1, 9 # Max 8 chars + null terminator
+syscall
+# Print newline
+la $a0, newline
+li $v0, 4
+syscall
+# Validate password length
+la $t0, buffer # Address of input password
+buffer
+li $t1, 0 # Character count
+validate_password_length:
+lb $t2, 0($t0) # Load current byte
+beqz $t2, check_password_length_done # Null terminator found
+addi $t1, $t1, 1 # Increment count
+addi $t0, $t0, 1 # Move to next byte
+b validate_password_length
+check_password_length_done:
+li $t3, 8 # Expected length
+bne $t1, $t3, invalid_password_length # If length != 8, reprompt
+# Validate the entered password
+# Compute the base address of the current user's password
+la $t0, passwords # Base address of the passwords array
+move $t1, $s1 # Copy user index to $t1 to to find
+passowrd position
+li $t2, 9 # Each user takes 9 bytes
+mul $t1, $t1, $t2 # Multiply index by 9
+add $t0, $t0, $t1 # Skip username by calculated offset
+# Compare entered password with saved password
+la $t1, buffer # Load address of entered password
+li $t2, 8 # Password length (8 bytes)
+validate_password:
+lb $t3, 0($t0) # Load byte from saved password
+lb $t4, 0($t1) # Load byte from entered password
+bne $t3, $t4, invalid_password # If mismatch, jump to invalid password
+beqz $t3, password_valid # Null terminator means match
+addi $t0, $t0, 1 # Move to next byte in saved password
+addi $t1, $t1, 1 # Move to next byte in entered password
+b validate_password
+password_valid:
+# Password matches
+la $a0, logged_in
+li $v0, 4
+syscall
+jr $ra #return
+invalid_user:
+# Print invalid username message
+la $a0, wrong_username
+li $v0, 4
+syscall
+b account_accessed # Reprompt for username
+invalid_length:
+# Print invalid length message
+la $a0, invalid_length_msg
+li $v0, 4
+syscall
+b account_accessed
+invalid_password:
+#print invalid password mesage
+la $a0, wrong_password
+li $v0, 4
+syscall
+b checking_password
+invalid_password_length:
+# Print invalid password length message
+la $a0, invalid_password_length_msg
+li $v0, 4
+syscall
+b checking_password

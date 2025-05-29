@@ -1,0 +1,235 @@
+.data
+# Add account intro
+intro_msg: .asciiz "You selected the add account option.\n"
+.globl buffer
+buffer: .space 9
+# Account question
+create_question: .asciiz "Would you like to sign up? Type 'y' for yes or 'n' for
+no: "
+# Response messages
+.globl computer_response_checking
+computer_response_checking: .asciiz "You chose the checking account option\n"
+.globl computer_response_savings
+computer_response_savings: .asciiz "You chose the savings account option\n"
+invalid_response: .asciiz "Invalid. Try again.\n"
+# Username/password messages
+.globl invalid_length_msg
+invalid_length_msg: .asciiz "Username must be exactly 8 characters long.\n"
+.globl invalid_password_length_msg
+invalid_password_length_msg: .asciiz "Password must be exactly 8 characters long.\
+n"
+username_added: .asciiz "Username registered.\n"
+password_added: .asciiz "Password registered.\n"
+no_space_message: .asciiz "No space available for new users.\n"
+.text
+.globl Add_Account
+Add_Account:
+# Intro message
+la $a0, intro_msg
+li $v0, 4
+syscall
+sign_up_question:
+# Ask the user if they want to sign up
+la $a0, create_question
+li $v0, 4
+syscall
+# Get user response
+li $v0, 12 # Syscall for single character input
+syscall
+move $t0, $v0 # Save the response
+# Print newline
+la $a0, newline
+li $v0, 4
+syscall
+# Validate response
+li $t1, 121 # ASCII for 'y'
+li $t2, 110 # ASCII for 'n'
+beq $t0, $t1, create_username # 'y' -> Create username
+beq $t0, $t2, done # 'n' -> Exit function
+# Invalid input
+la $a0, invalid_response
+li $v0, 4
+syscall
+b sign_up_question
+create_username:
+# Prompt for username
+la $a0, enter_username
+li $v0, 4
+syscall
+# Read username
+li $v0, 8 # Syscall to read a string
+la $a0, buffer # Buffer for input
+li $a1, 9 # Max 8 chars + null terminator
+syscall
+# Print newline
+la $a0, newline
+li $v0, 4
+syscall
+# Validate username length
+la $t0, buffer # Address of input username
+li $t1, 0 # Character count
+validate_length:
+lb $t2, 0($t0) # Load current byte
+beqz $t2, check_length_done # Null terminator foundli $v0, 4
+syscall
+# Get user response
+li $v0, 12 # Syscall for single character input
+syscall
+move $t0, $v0 # Save the response
+# Print newline
+la $a0, newline
+li $v0, 4
+syscall
+# Validate response
+li $t1, 121 # ASCII for 'y'
+li $t2, 110 # ASCII for 'n'
+beq $t0, $t1, create_username # 'y' -> Create username
+beq $t0, $t2, done # 'n' -> Exit function
+# Invalid input
+la $a0, invalid_response
+li $v0, 4
+syscall
+b sign_up_question
+create_username:
+# Prompt for username
+la $a0, enter_username
+li $v0, 4
+syscall
+# Read username
+li $v0, 8 # Syscall to read a string
+la $a0, buffer # Buffer for input
+li $a1, 9 # Max 8 chars + null terminator
+syscall
+# Print newline
+la $a0, newline
+li $v0, 4
+syscall
+# Validate username length
+la $t0, buffer # Address of input username
+li $t1, 0 # Character count
+validate_length:
+lb $t2, 0($t0) # Load current byte
+beqz $t2, check_length_done # Null terminator found
+addi $t1, $t1, 1 # Increment count
+addi $t0, $t0, 1 # Move to next byte
+b validate_length
+check_length_done:
+li $t3, 8 # Expected length
+bne $t1, $t3, invalid_length # If length != 8, reprompt
+# Find empty slot and store new username
+la $t0, usernames # Start address
+li $t1, 5 # Slot counter
+find_empty_slot:
+lb $t5, 0($t0) # Check if slot is empty
+beqz $t5, store_username # Empty slot found
+addi $t0, $t0, 9 # Move to next slot
+subi $t1, $t1, 1
+bnez $t1, find_empty_slot
+# No space available
+la $a0, no_space_message
+li $v0, 4
+syscall
+b done
+store_username:
+la $a1, buffer # Input username
+li $t4, 0 # Index for copying characters
+store_chars:
+lb $t6, 0($a1) # Load input character
+sb $t6, 0($t0) # Store into empty slot
+addi $a1, $a1, 1 # Move to next input character
+addi $t0, $t0, 1 # Move to next slot
+bnez $t6, store_chars # Continue until null terminator
+# Successful registration message
+la $a0, username_added
+li $v0, 4
+syscall
+add $t7, $t7, 1
+#register password
+create_password:
+# Prompt for password input
+la $a0, enter_password
+li $v0, 4
+syscall
+# Read password (up to 8 characters)
+li $v0, 8 # Syscall to read a string
+la $a0, buffer # Buffer for input
+li $a1, 9 # Max 8 chars + null terminator
+syscall
+# Print newline
+la $a0, newline
+li $v0, 4
+syscall
+# Validate password length
+la $t0, buffer # Address of input password
+li $t1, 0 # Character count
+validate_password_length:
+lb $t2, 0($t0) # Load current byte
+beqz $t2, check_password_length_done # Null terminator found
+addi $t1, $t1, 1 # Increment count
+addi $t0, $t0, 1 # Move to next byte
+b validate_password_length
+check_password_length_done:
+li $t3, 8 # Expected length
+bne $t1, $t3, invalid_password_length # If length != 8, reprompt
+# Find empty slot and store the password
+la $t0, passwords # Start address
+li $t1, 5 # Slot counter
+find_empty_password_slot:
+lb $t5, 0($t0) # Check if slot is empty
+beqz $t5, store_password # Empty slot found
+addi $t0, $t0, 9 # Move to next slot
+subi $t1, $t1, 1
+bnez $t1, find_empty_password_slot
+# No space available for new passwords
+la $a0, no_space_message
+li $v0, 4
+syscall
+b done
+store_password:
+la $a1, buffer # Input password
+li $t4, 0 # Index for copying characters
+store_password_chars:
+lb $t6, 0($a1) # Load input character
+sb $t6, 0($t0) # Store into empty slot
+addi $a1, $a1, 1 # Move to next input character
+addi $t0, $t0, 1 # Move to next slot
+bnez $t6, store_password_chars # Continue until null terminator
+# Successful password set message
+la $a0, password_added
+li $v0, 4
+syscall
+initialize_accounts:
+# Initialize the checking balance for the current user
+la $t0, checking_accounts # Load the base address of checking accounts
+array
+li $t2, 4 # 4 bytes per entry (32-bit balance)
+mul $t3, $t7, $t2 # Calculate the offset for the current user
+add $t0, $t0, $t3 # Add the offset to get the correct balance
+slot
+li $t4, 0 # Initialize balance to 0
+sw $t4, 0($t0) # Store the balance in the checking account
+slot
+# Initialize the savings balance for the current user
+la $t0, savings_accounts # Load the base address of savings accounts
+array
+mul $t3, $t7, $t2 # Calculate the offset for the current user
+add $t0, $t0, $t3 # Add the offset to get the correct balance
+slot
+sw $t4, 0($t0) # Store the balance in the savings account
+slot
+# Return after setting up accounts
+jr $ra
+done:
+jr $ra
+invalid_length:
+# Print invalid length message
+la $a0, invalid_length_msg
+li $v0, 4
+syscall
+b create_username
+invalid_password_length:
+# Print invalid password length message
+la $a0, invalid_password_length_msg
+li $v0, 4
+syscall
+b create_password # Retry password creation
